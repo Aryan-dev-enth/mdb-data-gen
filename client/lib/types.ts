@@ -1,7 +1,7 @@
 export interface Field {
   id: string
   name: string
-  type: "String" | "Number" | "Boolean" | "Date" | "ObjectId" | "Mixed"
+  type: any
   isRequired: boolean
   isArray: boolean
 }
