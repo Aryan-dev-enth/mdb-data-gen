@@ -4,6 +4,7 @@ export interface Field {
   type: any
   isRequired: boolean
   isArray: boolean
+  enumValues?: any[]
 }
 
 export interface Collection {

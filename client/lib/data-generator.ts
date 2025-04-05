@@ -20,38 +20,44 @@ function generateObjectId(): string {
 }
 
 // Generate a random value based on the field type
-function generateValueForType(field: Field, strictMode: boolean, existingValues: Set<string> = new Set()): any {
-  let value: any
-
-  // Handle array type
+function generateValueForType(
+  field: Field,
+  strictMode: boolean,
+  existingValues: Set<string> = new Set()
+): any {
   if (field.isArray) {
-    const arrayLength = Math.floor(Math.random() * 5) + 1 // 1-5 items
+    const arrayLength = Math.floor(Math.random() * 5) + 1
     const array = []
 
     for (let i = 0; i < arrayLength; i++) {
-      array.push(generateSingleValue(field.type, strictMode, existingValues))
+      array.push(generateSingleValue(field, strictMode, existingValues))
     }
 
     return array
   }
 
-  return generateSingleValue(field.type, strictMode, existingValues)
+  return generateSingleValue(field, strictMode, existingValues)
 }
 
-// Generate a single value based on type
-function generateSingleValue(type: Field["type"], strictMode: boolean, existingValues: Set<string> = new Set()): any {
+function generateSingleValue(
+  field: Field,
+  strictMode: boolean,
+  existingValues: Set<string> = new Set()
+): any {
+  if (field.enumValues && field.enumValues.length > 0) {
+    const randomIndex = Math.floor(Math.random() * field.enumValues.length)
+    return field.enumValues[randomIndex]
+  }
+
   let value: any
 
-  switch (type) {
+  switch (field.type) {
     case "String":
-      // Generate different types of strings based on field name hints
       value = faker.lorem.word()
       break
 
     case "Number":
       value = faker.number.int({ min: 1, max: 1000 })
-
-      // In non-strict mode, occasionally return a string number
       if (!strictMode && Math.random() < 0.1) {
         value = value.toString()
       }
@@ -59,8 +65,6 @@ function generateSingleValue(type: Field["type"], strictMode: boolean, existingV
 
     case "Boolean":
       value = faker.datatype.boolean()
-
-      // In non-strict mode, occasionally return "true"/"false" strings
       if (!strictMode && Math.random() < 0.1) {
         value = value.toString()
       }
@@ -68,8 +72,6 @@ function generateSingleValue(type: Field["type"], strictMode: boolean, existingV
 
     case "Date":
       value = faker.date.past()
-
-      // In non-strict mode, occasionally return ISO string
       if (!strictMode && Math.random() < 0.2) {
         value = value.toISOString()
       }
@@ -80,9 +82,9 @@ function generateSingleValue(type: Field["type"], strictMode: boolean, existingV
       break
 
     case "Mixed":
-      // For Mixed type, randomly choose between different value types
       const mixedTypes = ["string", "number", "boolean", "object", "array"]
-      const randomType = mixedTypes[Math.floor(Math.random() * mixedTypes.length)]
+      const randomType =
+        mixedTypes[Math.floor(Math.random() * mixedTypes.length)]
 
       switch (randomType) {
         case "string":
@@ -102,7 +104,10 @@ function generateSingleValue(type: Field["type"], strictMode: boolean, existingV
           }
           break
         case "array":
-          value = Array.from({ length: Math.floor(Math.random() * 3) + 1 }, () => faker.lorem.word())
+          value = Array.from(
+            { length: Math.floor(Math.random() * 3) + 1 },
+            () => faker.lorem.word()
+          )
           break
       }
       break
@@ -114,24 +119,31 @@ function generateSingleValue(type: Field["type"], strictMode: boolean, existingV
   return value
 }
 
-// Generate more realistic values based on field name
 function generateSmartValue(field: Field, strictMode: boolean): any {
   const fieldNameLower = field.name.toLowerCase()
 
-  // Handle array type
   if (field.isArray) {
-    const arrayLength = Math.floor(Math.random() * 5) + 1 // 1-5 items
-    return Array.from({ length: arrayLength }, () => generateSmartSingleValue(field, fieldNameLower, strictMode))
+    const arrayLength = Math.floor(Math.random() * 5) + 1
+    return Array.from(
+      { length: arrayLength },
+      () => generateSmartSingleValue(field, fieldNameLower, strictMode)
+    )
   }
 
   return generateSmartSingleValue(field, fieldNameLower, strictMode)
 }
 
-// Generate a single smart value based on field name
-function generateSmartSingleValue(field: Field, fieldNameLower: string, strictMode: boolean): any {
-  // Common field name patterns
+function generateSmartSingleValue(
+  field: Field,
+  fieldNameLower: string,
+  strictMode: boolean
+): any {
+  if (field.enumValues && field.enumValues.length > 0) {
+    const randomIndex = Math.floor(Math.random() * field.enumValues.length)
+    return field.enumValues[randomIndex]
+  }
+
   if (field.type === "String" || (!strictMode && Math.random() < 0.9)) {
-    // Name-related fields
     if (fieldNameLower.includes("name")) {
       if (fieldNameLower.includes("first")) return faker.person.firstName()
       if (fieldNameLower.includes("last")) return faker.person.lastName()
@@ -140,37 +152,46 @@ function generateSmartSingleValue(field: Field, fieldNameLower: string, strictMo
       return faker.person.fullName()
     }
 
-    // Email-related fields
     if (fieldNameLower.includes("email")) {
       return faker.internet.email()
     }
 
-    // Address-related fields
     if (fieldNameLower.includes("address")) {
       if (fieldNameLower.includes("street")) return faker.location.street()
       if (fieldNameLower.includes("city")) return faker.location.city()
       if (fieldNameLower.includes("state")) return faker.location.state()
       if (fieldNameLower.includes("country")) return faker.location.country()
-      if (fieldNameLower.includes("zip") || fieldNameLower.includes("postal")) return faker.location.zipCode()
+      if (
+        fieldNameLower.includes("zip") ||
+        fieldNameLower.includes("postal")
+      )
+        return faker.location.zipCode()
       return faker.location.streetAddress()
     }
 
-    // Phone-related fields
-    if (fieldNameLower.includes("phone") || fieldNameLower.includes("mobile")) {
+    if (
+      fieldNameLower.includes("phone") ||
+      fieldNameLower.includes("mobile")
+    ) {
       return faker.phone.number()
     }
 
-    // URL-related fields
-    if (fieldNameLower.includes("url") || fieldNameLower.includes("website") || fieldNameLower.includes("site")) {
+    if (
+      fieldNameLower.includes("url") ||
+      fieldNameLower.includes("website") ||
+      fieldNameLower.includes("site")
+    ) {
       return faker.internet.url()
     }
 
-    // Image-related fields
-    if (fieldNameLower.includes("image") || fieldNameLower.includes("avatar") || fieldNameLower.includes("photo")) {
+    if (
+      fieldNameLower.includes("image") ||
+      fieldNameLower.includes("avatar") ||
+      fieldNameLower.includes("photo")
+    ) {
       return faker.image.url()
     }
 
-    // Description or content fields
     if (
       fieldNameLower.includes("description") ||
       fieldNameLower.includes("content") ||
@@ -179,48 +200,47 @@ function generateSmartSingleValue(field: Field, fieldNameLower: string, strictMo
       return faker.lorem.paragraph()
     }
 
-    // Title fields
     if (fieldNameLower.includes("title")) {
       return faker.lorem.sentence()
     }
 
-    // Username fields
     if (fieldNameLower.includes("username")) {
       return faker.internet.userName()
     }
 
-    // Password fields
     if (fieldNameLower.includes("password")) {
       return faker.internet.password()
     }
+
+    if (fieldNameLower.includes("id") && !fieldNameLower.includes("objectid")) {
+      return faker.string.alphanumeric(10)
+    }
+
+    return faker.lorem.word()
   }
 
-  // For other types or if no specific pattern matched, use the generic generator
   return generateValueForType(field, strictMode)
 }
 
 // Main function to generate dummy data
-export function generateDummyData(collections: Collection[], strictMode: boolean): Record<string, any[]> {
+export function generateDummyData(
+  collections: Collection[],
+  strictMode: boolean
+): Record<string, any[]> {
   const result: Record<string, any[]> = {}
 
-  // Generate data for each collection
   collections.forEach((collection) => {
     const collectionData: any[] = []
     const collectionName = collection.name
 
-    // Generate the specified number of documents
     for (let i = 0; i < collection.documentCount; i++) {
       const document: Record<string, any> = {}
 
-      // Generate values for each field
       collection.fields.forEach((field) => {
-        // Skip if field has no name
         if (!field.name.trim()) return
 
-        // Generate value based on field type and name
         const value = generateSmartValue(field, strictMode)
 
-        // Skip undefined or null values for non-required fields
         if ((value === undefined || value === null) && !field.isRequired) {
           return
         }
@@ -236,4 +256,3 @@ export function generateDummyData(collections: Collection[], strictMode: boolean
 
   return result
 }
-
